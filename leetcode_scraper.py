@@ -59,26 +59,20 @@ class LeetCodeScraper:
         
         try:
             response = requests.post(self.graphql_url, headers=self.headers, json=query)
-            
             if response.status_code != 200:
                 print(f"Failed to fetch problem: {problem_slug}. Status code: {response.status_code}")
                 return None
-            
             data = response.json()
-            question = data.get('data', {}).get('question', {})
-            
-            if not question:
-                print(f"No data found for problem: {problem_slug}")
+            print(f"[DEBUG] Raw API response for {problem_slug}: {json.dumps(data, indent=2)}")
+            question = data.get('data', {}).get('question', None)
+            if question is None:
+                print(f"No question data found for problem: {problem_slug}. Response structure may have changed or the slug is invalid.")
                 return None
-            
             # Process the problem data
             problem_data = self._process_problem_data(question)
-            
             # Save the problem data
             self._save_problem_data(problem_slug, problem_data)
-            
             return problem_data
-        
         except Exception as e:
             print(f"Error scraping problem {problem_slug}: {str(e)}")
             return None
@@ -208,7 +202,10 @@ class LeetCodeScraper:
         problem_data['code_snippets'] = code_snippets
         
         # Extract solution content if available
-        solution_content = question.get('solution', {}).get('content')
+        solution = question.get('solution')
+        solution_content = None
+        if solution and isinstance(solution, dict):
+            solution_content = solution.get('content')
         if solution_content:
             solution_soup = BeautifulSoup(solution_content, 'html.parser')
             problem_data['solution'] = solution_soup.get_text(strip=True)
@@ -260,7 +257,7 @@ class LeetCodeScraper:
     
 if __name__ == "__main__":
     scraper = LeetCodeScraper()
-    problem_data = scraper.scrape_problem("longest-strictly-increasing-or-strictly-decreasing-subarray")
+    problem_data = scraper.scrape_problem("list-the-products-ordered-in-a-period")
     print(json.dumps(problem_data, indent=2))
     # Option 2: Scrape multiple problems from the list
     # problem_list = scraper.scrape_problem_list(limit=5)
