@@ -97,9 +97,20 @@ class LeetCodeScraper:
         }
         
         # Process content with BeautifulSoup to extract description, examples, and constraints
+        import os
         content_html = question.get('content', '')
+        debug_dir = os.path.dirname(os.path.abspath(__file__))
+        debug_content_path = os.path.join(debug_dir, 'debug_content_html.txt')
+        debug_soup_path = os.path.join(debug_dir, 'debug_soup.html')
+        # Write content_html to a debug file for inspection
+        with open(debug_content_path, 'w', encoding='utf-8') as f:
+            f.write(content_html)
+        print(f"[DEBUG] Wrote content_html to {debug_content_path}")
         soup = BeautifulSoup(content_html, 'html.parser')
-        
+        # Write soup prettified HTML to a debug file for inspection
+        with open(debug_soup_path, 'w', encoding='utf-8') as f:
+            f.write(soup.prettify())
+        print(f"[DEBUG] Wrote soup HTML to {debug_soup_path}")
         # Get description (text before the first <strong>Example</strong>)
         description = []
         current_element = soup.find()
@@ -113,14 +124,23 @@ class LeetCodeScraper:
         
         problem_data['description'] = '\n'.join([d for d in description if d])
         
-        # Extract examples
+        # Extract examples and attach the closest preceding image to each
         examples = []
         example_blocks = soup.find_all('pre')
         for i, example in enumerate(example_blocks, 1):
-            examples.append({
+            example_dict = {
                 'example_num': i,
-                'example_text': example.get_text().strip()
-            })
+                'example_text': example.get_text().strip(),
+                'images': []
+            }
+            # Find the closest preceding <img> tag before this <pre>
+            prev = example.previous_element
+            while prev:
+                if getattr(prev, 'name', None) == 'img' and prev.has_attr('src'):
+                    example_dict['images'].append(prev['src'])
+                    break
+                prev = prev.previous_element
+            examples.append(example_dict)
         problem_data['examples'] = examples
         
         # Extract constraints
@@ -212,18 +232,22 @@ class LeetCodeScraper:
         
         return problem_list
 
-if __name__ == "__main__":
-    scraper = LeetCodeScraper()
+# if __name__ == "__main__":
+#     scraper = LeetCodeScraper()
     
     # Option 1: Scrape a specific problem
     # problem_data = scraper.scrape_problem("two-sum")
     # print(json.dumps(problem_data, indent=2))
     
+if __name__ == "__main__":
+    scraper = LeetCodeScraper()
+    problem_data = scraper.scrape_problem("linked-list-cycle")
+    print(json.dumps(problem_data, indent=2))
     # Option 2: Scrape multiple problems from the list
-    problem_list = scraper.scrape_problem_list(limit=5)
+    # problem_list = scraper.scrape_problem_list(limit=5)
     
-    # Add a delay between requests to avoid being blocked
-    for problem in problem_list:
-        print(f"Scraping problem: {problem['title']} ({problem['slug']})")
-        scraper.scrape_problem(problem['slug'])
-        time.sleep(2)  # Wait 2 seconds between requests
+    # # Add a delay between requests to avoid being blocked
+    # for problem in problem_list:
+    #     print(f"Scraping problem: {problem['title']} ({problem['slug']})")
+    #     scraper.scrape_problem(problem['slug'])
+    #     time.sleep(2)  # Wait 2 seconds between requests
