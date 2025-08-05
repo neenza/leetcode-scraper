@@ -141,6 +141,24 @@ class LeetCodeScraper:
                     break
                 prev = prev.previous_element
             examples.append(example_dict)
+
+        # Fallback: if no <pre> examples found, try <div class="example-block">
+        if not examples:
+            example_blocks = soup.find_all('div', class_='example-block')
+            for i, block in enumerate(example_blocks, 1):
+                # Collect all <p> tags inside the block
+                block_texts = []
+                for p in block.find_all('p'):
+                    block_texts.append(p.get_text(separator=' ', strip=True))
+                example_text = '\n'.join(block_texts)
+                # Find images inside the block
+                images = [img['src'] for img in block.find_all('img') if img.has_attr('src')]
+                example_dict = {
+                    'example_num': i,
+                    'example_text': example_text,
+                    'images': images
+                }
+                examples.append(example_dict)
         problem_data['examples'] = examples
         
         # Extract constraints
