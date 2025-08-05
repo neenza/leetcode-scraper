@@ -216,7 +216,13 @@ class LeetCodeScraper:
         """
         Save the problem data to a JSON file
         """
-        filename = os.path.join(self.problems_dir, f"{problem_slug}.json")
+        frontend_id = str(problem_data.get('frontend_id', ''))
+        # Zero-pad to 4 digits if possible
+        try:
+            frontend_id_padded = frontend_id.zfill(4)
+        except Exception:
+            frontend_id_padded = frontend_id
+        filename = os.path.join(self.problems_dir, f"{frontend_id_padded}-{problem_slug}.json")
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(problem_data, f, indent=2, ensure_ascii=False)
         
@@ -224,28 +230,26 @@ class LeetCodeScraper:
         
     def scrape_problem_list(self, limit=10):
         """
-        Scrape the list of problems from LeetCode
+        Get the list of problems from all_problems.csv
         """
-        all_problems_url = "https://leetcode.com/api/problems/all/"
-        response = requests.get(all_problems_url, headers=self.headers)
-        
-        if response.status_code != 200:
-            print(f"Failed to fetch problem list. Status code: {response.status_code}")
-            return []
-        
-        data = response.json()
+        import csv
+        csv_path = 'all_problems.csv'
         problem_list = []
-        
-        for problem in data.get('stat_status_pairs', [])[:limit]:
-            stat = problem.get('stat', {})
-            problem_info = {
-                'id': stat.get('question_id'),
-                'title': stat.get('question__title'),
-                'slug': stat.get('question__title_slug'),
-                'difficulty': problem.get('difficulty', {}).get('level')
-            }
-            problem_list.append(problem_info)
-        
+        try:
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for i, row in enumerate(reader):
+                    if limit is not None and i >= limit:
+                        break
+                    problem_info = {
+                        'id': row.get('frontend_question_id'),
+                        'title': row.get('question__title'),
+                        'slug': row.get('question__title_slug'),
+                        'difficulty': row.get('difficulty')
+                    }
+                    problem_list.append(problem_info)
+        except Exception as e:
+            print(f"Error reading CSV file {csv_path}: {str(e)}")
         return problem_list
 
 # if __name__ == "__main__":
@@ -257,7 +261,7 @@ class LeetCodeScraper:
     
 if __name__ == "__main__":
     scraper = LeetCodeScraper()
-    problem_data = scraper.scrape_problem("list-the-products-ordered-in-a-period")
+    problem_data = scraper.scrape_problem("maximum-median-sum-of-subsequences-of-size-3")
     print(json.dumps(problem_data, indent=2))
     # Option 2: Scrape multiple problems from the list
     # problem_list = scraper.scrape_problem_list(limit=5)

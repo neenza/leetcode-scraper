@@ -50,23 +50,23 @@ if __name__ == "__main__":
     scraper = LeetCodeScraper()
     
     # Example 1: Scrape a single problem
-    print("Scraping 'set-matrix-zeroes' problem...")
-    problem_data = scraper.scrape_problem("set-matrix-zeroes")
-    print_problem_details(problem_data)
+    # print("Scraping 'set-matrix-zeroes' problem...")
+    # problem_data = scraper.scrape_problem("set-matrix-zeroes")
+    # print_problem_details(problem_data)
     
     # Example 2: Get a list of problems and scrape the first 3
     print("\nGetting list of problems...")
-    problem_list = scraper.scrape_problem_list(limit=3)
+    problem_list = scraper.scrape_problem_list(limit=3650)
     
     print(f"Found {len(problem_list)} problems:")
     for i, problem in enumerate(problem_list, 1):
         print(f"{i}. {problem['title']} (Difficulty: {'Easy' if problem['difficulty'] == 1 else 'Medium' if problem['difficulty'] == 2 else 'Hard'})")
     
     # Uncomment to scrape all problems in the list
-    """
+    
     print("\nScraping all problems in the list...")
     for problem in problem_list:
         print(f"Scraping {problem['title']}...")
         scraper.scrape_problem(problem['slug'])
-        time.sleep(2)  # Add delay between requests
-    """
+        # time.sleep(2)  # Add delay between requests
+    
