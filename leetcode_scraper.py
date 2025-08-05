@@ -162,19 +162,20 @@ class LeetCodeScraper:
         
         # Extract follow-up section if it exists
         follow_ups = []
-        for elem in soup.find_all(['p', 'strong']):
-            if elem.name == 'strong' and 'Follow-up' in elem.text:
-                follow_up_text = elem.parent.get_text().strip()
-                follow_ups.append(follow_up_text)
-                
-                # Sometimes follow-ups are in paragraphs after the header
-                next_elem = elem.parent.next_sibling
-                while next_elem and next_elem.name == 'p':
-                    follow_up_text = next_elem.get_text().strip()
-                    if follow_up_text:
-                        follow_ups.append(follow_up_text)
+        for p in soup.find_all('p'):
+            strong = p.find('strong')
+            if strong and 'Follow up' in strong.get_text():
+                # Get the text after <strong> in the same <p>
+                follow_up_text = p.get_text().replace(strong.get_text(), '').strip()
+                if follow_up_text:
+                    follow_ups.append(follow_up_text)
+                # Also check next <p> tags for additional follow-up info
+                next_elem = p.next_sibling
+                while next_elem and getattr(next_elem, 'name', None) == 'p':
+                    extra_text = next_elem.get_text().strip()
+                    if extra_text:
+                        follow_ups.append(extra_text)
                     next_elem = next_elem.next_sibling
-        
         problem_data['follow_ups'] = follow_ups
         
         # Extract hints from the API response
@@ -241,7 +242,7 @@ class LeetCodeScraper:
     
 if __name__ == "__main__":
     scraper = LeetCodeScraper()
-    problem_data = scraper.scrape_problem("linked-list-cycle")
+    problem_data = scraper.scrape_problem("longest-strictly-increasing-or-strictly-decreasing-subarray")
     print(json.dumps(problem_data, indent=2))
     # Option 2: Scrape multiple problems from the list
     # problem_list = scraper.scrape_problem_list(limit=5)
